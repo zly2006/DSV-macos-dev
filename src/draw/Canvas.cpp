@@ -1,10 +1,14 @@
 #include <QPainterPath>
+#include <QtOpenGL>
 
 #include "base/Algorithm.hpp"
 #include "draw/Canvas.hpp"
 #include "draw/GLSL.hpp"
 #include "io/GlobalSetting.hpp"
 
+#ifdef __APPLE__
+#define GL_PRIMITIVE_RESTART_FIXED_INDEX  0x8D69
+#endif
 
 Canvas::Canvas(QWidget *parent)
     : QOpenGLWidget(parent), _input_line(this)
@@ -57,7 +61,10 @@ void Canvas::bind_editer(Editer *editer)
 
 void Canvas::initializeGL()
 {
-    initializeOpenGLFunctions();
+    if (!initializeOpenGLFunctions()) {
+        qWarning("Cannot initialize OpenGL functions");
+        exit(233);
+    }
     glClearColor(0.117647f, 0.156862f, 0.188235f, 1.0f);
 
     unsigned int vertex_shader;
@@ -65,6 +72,8 @@ void Canvas::initializeGL()
 
     glPointSize(9.6f); // 点大小
     glLineWidth(1.4f); // 线宽
+    // 不知道有什么用， Chrome 社区有人提到了这个
+//    glPrimitiveRestartIndex(GL_PRIMITIVE_RESTART);
     glEnable(GL_PRIMITIVE_RESTART_FIXED_INDEX);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -97,10 +106,11 @@ void Canvas::initializeGL()
     glUniform3d(_uniforms[2], 1.0, 0.0, 0.0); // vec0
     glUniform3d(_uniforms[3], 0.0, -1.0, 0.0); // vec1
 
-    glCreateVertexArrays(1, &_VAO);
-    glCreateBuffers(5, _VBO);
+    glGenVertexArrays(1, &_VAO);
+    glGenBuffers(5, _VBO);
 
     glBindVertexArray(_VAO);
+    glVertexAttribLPointer(0, 3, GL_DOUBLE, 3 * sizeof(double), NULL);
 
     glBindBuffer(GL_ARRAY_BUFFER, _VBO[4]); // reflines
     glBufferData(GL_ARRAY_BUFFER, 30 * sizeof(double), _refline_points, GL_DYNAMIC_DRAW);
@@ -116,7 +126,7 @@ void Canvas::initializeGL()
     glVertexAttribLPointer(0, 3, GL_DOUBLE, 3 * sizeof(double), NULL);
     glEnableVertexAttribArray(0);
 
-    glCreateBuffers(4, _IBO);
+    glGenBuffers(4, _IBO);
 
 }
 
