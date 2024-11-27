@@ -34,6 +34,7 @@ void Canvas::init()
     format.setStencilBufferSize(8);
     format.setSamples(4);
     format.setProfile(QSurfaceFormat::CoreProfile);
+    format.setVersion(4, 6);
     setFormat(format);
 
     _cache = new double[_cache_len];
@@ -59,10 +60,14 @@ void Canvas::bind_editer(Editer *editer)
 
 void Canvas::initializeGL()
 {
+    qInfo() << "OpenGL version:" << (const char *)::glGetString(GL_VERSION);
     if (!initializeOpenGLFunctions()) {
         qWarning("Cannot initialize OpenGL functions");
-        qDebug() << "OpenGL version: " << QString((const char *)::glGetString(GL_VERSION));
-        qDebug() << "GL error: " << (int)::glGetError();
+        qDebug() << "OpenGL version:" << QString((const char *)::glGetString(GL_VERSION));
+        qDebug() << "GL error:" << (int)::glGetError();
+#ifdef __APPLE__
+        qDebug() << "Only Apple can do!";
+#endif
         exit(233);
     }
     glClearColor(0.117647f, 0.156862f, 0.188235f, 1.0f);
@@ -143,6 +148,40 @@ void Canvas::resizeGL(int w, int h)
 
     _visible_area = Geo::AABBRect(0, 0, w, h);
     _visible_area.transform(_view_ctm[0], _view_ctm[3], _view_ctm[6], _view_ctm[1], _view_ctm[4], _view_ctm[7]);    
+}
+
+void checkGlError() {
+    int glError = glGetError();
+    if (glError)
+    {
+        switch (glError)
+        {
+        case GL_INVALID_ENUM:
+            qWarning("GL error: GL_INVALID_ENUM");
+            break;
+        case GL_INVALID_VALUE:
+            qWarning("GL error: GL_INVALID_VALUE");
+            break;
+        case GL_INVALID_OPERATION:
+            qWarning("GL error: GL_INVALID_OPERATION");
+            break;
+        case GL_STACK_OVERFLOW:
+            qWarning("GL error: GL_STACK_OVERFLOW");
+            break;
+        case GL_STACK_UNDERFLOW:
+            qWarning("GL error: GL_STACK_UNDERFLOW");
+            break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            qWarning("GL error: GL_INVALID_FRAMEBUFFER_OPERATION");
+            break;
+        case GL_OUT_OF_MEMORY:
+            qWarning("GL error: GL_OUT_OF_MEMORY");
+            break;
+        default:
+            qWarning("GL error: %d", glError);
+            break;
+        }
+    }
 }
 
 void Canvas::paintGL()
@@ -331,6 +370,7 @@ void Canvas::paintGL()
         glDrawArrays(GL_POINTS, 0, _points_count);
     }
 
+    checkGlError();
     if (!_editer->point_cache().empty())
     {
         glBindBuffer(GL_ARRAY_BUFFER, _VBO[2]); // cache
@@ -360,17 +400,25 @@ void Canvas::paintGL()
             _cache[i * 3 + 1] = _AABBRect_cache[i].y;
             _cache[i * 3 + 2] = 0;
         }
+        checkGlError();
 
         glBindBuffer(GL_ARRAY_BUFFER, _VBO[2]); // cache
         glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(double), _cache);
         glVertexAttribLPointer(0, 3, GL_DOUBLE, 3 * sizeof(double), NULL);
         glEnableVertexAttribArray(0);
+        checkGlError();
 
         glUniform4f(_uniforms[4], 0.831372f, 0.843137f, 0.850980f, 0.078431f); // color 绘制填充色
-        glDrawArrays(GL_POLYGON, 0, 4);
+
+        checkGlError();
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        checkGlError();
 
         glUniform4f(_uniforms[4], 1.0f, 1.0f, 1.0f, 1.0f); // color 绘制线
+
+        checkGlError();
         glDrawArrays(GL_LINE_LOOP, 0, 4);
+        checkGlError();
     }
     else if (!_circle_cache.empty())
     {
@@ -421,16 +469,19 @@ void Canvas::paintGL()
         glDrawArrays(GL_LINE_LOOP, 0, _cache_count / 3);
         _cache_count = 0;
     }
+    checkGlError();
 
     glBindBuffer(GL_ARRAY_BUFFER, _VBO[1]); // origin and select rect
     glVertexAttribLPointer(0, 3, GL_DOUBLE, 3 * sizeof(double), NULL);
     glEnableVertexAttribArray(0);
+    checkGlError();
 
     if (_bool_flags[7]) // origin
     {
         glUniform4f(_uniforms[4], 1.0f, 1.0f, 1.0f, 1.0f); // color 画原点
         glDrawArrays(GL_LINES, 0, 4);
     }
+    checkGlError();
 
     if (!_select_rect.empty())
     {
@@ -447,11 +498,12 @@ void Canvas::paintGL()
         glEnableVertexAttribArray(0);
 
         glUniform4f(_uniforms[4], 0.0f, 0.47f, 0.843f, 0.1f); // color
-        glDrawArrays(GL_POLYGON, 4, 4);
+        glDrawArrays(GL_TRIANGLE_STRIP, 4, 4);
 
         glUniform4f(_uniforms[4], 0.0f, 1.0f, 0.0f, 0.549f); // color
         glDrawArrays(GL_LINE_LOOP, 4, 4);
     }
+    checkGlError();
 }
 
 void Canvas::mousePressEvent(QMouseEvent *event)
