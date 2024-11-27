@@ -411,7 +411,7 @@ void Canvas::paintGL()
         glUniform4f(_uniforms[4], 0.831372f, 0.843137f, 0.850980f, 0.078431f); // color 绘制填充色
 
         checkGlError();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         checkGlError();
 
         glUniform4f(_uniforms[4], 1.0f, 1.0f, 1.0f, 1.0f); // color 绘制线
@@ -498,7 +498,7 @@ void Canvas::paintGL()
         glEnableVertexAttribArray(0);
 
         glUniform4f(_uniforms[4], 0.0f, 0.47f, 0.843f, 0.1f); // color
-        glDrawArrays(GL_TRIANGLE_STRIP, 4, 4);
+        glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
 
         glUniform4f(_uniforms[4], 0.0f, 1.0f, 0.0f, 0.549f); // color
         glDrawArrays(GL_LINE_LOOP, 4, 4);
