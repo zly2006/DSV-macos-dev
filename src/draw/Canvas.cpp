@@ -57,12 +57,12 @@ void Canvas::bind_editer(Editer *editer)
 }
 
 
-
-
 void Canvas::initializeGL()
 {
     if (!initializeOpenGLFunctions()) {
         qWarning("Cannot initialize OpenGL functions");
+        qDebug() << "OpenGL version: " << QString((const char *)::glGetString(GL_VERSION));
+        qDebug() << "GL error: " << (int)::glGetError();
         exit(233);
     }
     glClearColor(0.117647f, 0.156862f, 0.188235f, 1.0f);
