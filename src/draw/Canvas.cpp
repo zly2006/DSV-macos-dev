@@ -60,11 +60,8 @@ void Canvas::bind_editer(Editer *editer)
 
 void Canvas::initializeGL()
 {
-    qInfo() << "OpenGL version:" << (const char *)::glGetString(GL_VERSION);
     if (!initializeOpenGLFunctions()) {
         qWarning("Cannot initialize OpenGL functions");
-        qDebug() << "OpenGL version:" << QString((const char *)::glGetString(GL_VERSION));
-        qDebug() << "GL error:" << (int)::glGetError();
 #ifdef __APPLE__
         qDebug() << "Only Apple can do!";
 #endif
